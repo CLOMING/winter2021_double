@@ -1,9 +1,8 @@
-from ast import Num
 from double3sdk.double_api import _DoubleAPI
 
 
 class _Base:
-    def pole_set_target(self, percent: Num) -> None:
+    def pole_set_target(self, percent: float) -> None:
         '''
         base.pole.setTarget
             percent
