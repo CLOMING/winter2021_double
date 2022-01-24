@@ -1,4 +1,3 @@
-from _typeshed import OpenBinaryMode
 from dataclasses import dataclass
 from typing import Any, Optional
 
