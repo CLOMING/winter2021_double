@@ -37,7 +37,7 @@ class _DoubleAPI:
         packet: Dict[str, Any] = {'c': command}
         if data is not None:
             packet['d'] = data
-        jsonString: str = json.jumps(packet)
+        jsonString: str = json.dumps(packet)
         self._sock.send(jsonString.encode(CONST.utf8))
 
     def recv(self) -> Any:
