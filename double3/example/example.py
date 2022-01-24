@@ -5,8 +5,13 @@ async def main_async():
     d3 = Double3SDK()
     d3.api.request_status()
 
-    packet = d3.recv()
-    print(packet)
+    
+    while True:
+        packet = d3.recv()
+        if packet == None:
+            continue
+
+        print(packet)
 
 if __name__ == "__main__":
     import os.path
