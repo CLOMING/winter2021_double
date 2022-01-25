@@ -14,3 +14,21 @@ class _Base:
             'base.pole.setTarget',
             {"percent": percent}
         )
+
+    def kickstand_deploy(self) -> None:
+        '''
+        base.kickstand.deploy
+            베이스의 받침다리를 펼침
+        '''
+        double_api = _DoubleAPI()
+        double_api.send_command('base.kickstand.deploy')
+
+    def kickstand_retract(self) -> None:
+        '''
+        base.kickstand.retract
+            베이스의 받침다리를 접음
+            주변 상황이 받침다리를 접기에 좋지 않으면 다음 이벤트가 발생
+                event: DRBase.kickstandAngleError
+        '''
+        double_api = _DoubleAPI()
+        double_api.send_command('base.kickstand.retract')
