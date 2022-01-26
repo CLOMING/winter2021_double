@@ -32,3 +32,36 @@ class _Base:
         '''
         double_api = _DoubleAPI()
         double_api.send_command('base.kickstand.retract')
+
+    def request_status(self) -> None:
+        '''
+        base.requestStatus
+            event: DRBase.status
+            이 이벤트를 subscirbe 해야 base의 api를 쓸 수 있음
+        '''
+        double_api = _DoubleAPI()
+        double_api.send_command('base.requestStatus')
+
+    def pole_stand(self) -> None:
+        '''
+        base.pole.stand
+            폴 높이기
+        '''
+        double_api = _DoubleAPI()
+        double_api.send_command('base.pole.stand')
+
+    def pole_sit(self) -> None:
+        '''
+        base.pole.sit
+            폴 낮추기
+        '''
+        double_api = _DoubleAPI()
+        double_api.send_command('base.pole.sit')
+
+    def pole_stop(self) -> None:
+        '''
+        base.pole.stop
+            폴 조절 중지
+        '''
+        double_api = _DoubleAPI()
+        double_api.send_command('base.pole.stop')
