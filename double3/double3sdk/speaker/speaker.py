@@ -30,3 +30,11 @@ class _Speaker:
             'speaker.setVolume',
             {"percent": percent}
         )
+
+    def request_volume(self) -> None:
+        '''
+        speaker.requestVolume
+            event: DRSpeaker.volume
+        '''
+        double_api = _DoubleAPI()
+        double_api.send_command('speaker.requestVolume')
