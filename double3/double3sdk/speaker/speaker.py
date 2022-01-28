@@ -22,8 +22,8 @@ class _Speaker:
         '''
         speaker.setVolume
             percent
-                0-100 사이의 실수
-                스피커의 볼륨을 (percent)%로 설정
+                0-1 사이의 실수
+                스피커의 볼륨을 (percent)*100 %로 설정
         '''
         double_api = _DoubleAPI()
         double_api.send_command(
