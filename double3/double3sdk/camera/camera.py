@@ -81,16 +81,17 @@ class _Camera:
         passToNavigate: bool
     ) -> None:
         '''
-        event: DRCamera.hitResult
-        x, y
-            0-1 사이의 실수
-            (0,0)은 좌측상단, (0.5,0.5)는 중앙, (1,1)은 우측하단 
+        camera.hitTest
+            event: DRCamera.hitResult
+            x, y
+                0-1 사이의 실수
+                (0,0)은 좌측상단, (0.5,0.5)는 중앙, (1,1)은 우측하단 
 
-        highlight
-            충전이나 QR 아이콘을 누르면 주변에 투명한 원형 빛이 나옴
+            highlight
+                충전이나 QR 아이콘을 누르면 주변에 투명한 원형 빛이 나옴
 
-        passToNavigate
-            실제 행동을 위해 navigate.hitResult 명령에 hit 결과를 보내줌 
+            passToNavigate
+                실제 행동을 위해 navigate.hitResult 명령에 hit 결과를 보내줌 
         '''
 
         command: str = 'camera.hitTest'
