@@ -6,7 +6,7 @@ class _Events:
         '''
         events.subscribe
             events
-                [ "DRBase.status" ]
+                [ "이벤트 이름" ]
         '''
         double_api = _DoubleAPI()
         double_api.send_command(
@@ -18,7 +18,7 @@ class _Events:
         '''
         events.unsubscribe
             events
-                [ "DRBase.status" ]
+                [ "이벤트 이름" ]
         '''
         double_api = _DoubleAPI()
         double_api.send_command(
