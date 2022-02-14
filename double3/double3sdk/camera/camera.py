@@ -27,15 +27,7 @@ class _Camera:
 
             template
                 template 값으로 다음 문자열 중 하나가 올 수 있다.
-                "preheat": 카메라를 켜지만 출력이 없음
-                    _Template.preheat.value를 사용
-                "screen": "nvoverlaysink"를 이용해서 화면에 보여준다.
-                    _Template.screen.value를 사용
-                "h264ForWebRTC": 하드웨어를 h264로 부호화하고 d3-webrtc 바이너리에 게시
-                    _Template.h264ForWebRTC.value를 사용
-                "v412": /dev/video9로 출력하고 Electron/Chromium에서 웹캠 "D3_Camera"으로 보여줌
-                    _Template.v412.value를 사용
-                주의: array of outputs를 보낼 때는 기본 사이즈만 가능
+                    "preheat" / "screen" /  "h264ForWebRTC" / "v412"
 
             gstreamer
                 문자열 "appsrc name=d3src ! autovideosink"
@@ -78,7 +70,6 @@ class _Camera:
         x: float,
         y: float,
         highlight: bool,
-        passToNavigate: bool
     ) -> None:
         '''
         camera.hitTest
@@ -88,10 +79,8 @@ class _Camera:
                 (0,0)은 좌측상단, (0.5,0.5)는 중앙, (1,1)은 우측하단 
 
             highlight
-                충전이나 QR 아이콘을 누르면 주변에 투명한 원형 빛이 나옴
-
-            passToNavigate
-                실제 행동을 위해 navigate.hitResult 명령에 hit 결과를 보내줌 
+                True/False
+                충전이나 QR 아이콘을 누르면 주변에 투명한 원형 빛이 나옴 
         '''
 
         command: str = 'camera.hitTest'
@@ -102,8 +91,6 @@ class _Camera:
         data["y"] = y
 
         data["highlight"] = highlight
-
-        data["passToNavigate"] = passToNavigate
 
         double_api = _DoubleAPI()
         double_api.send_command(command, data)
