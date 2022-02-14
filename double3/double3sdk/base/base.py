@@ -7,7 +7,7 @@ class _Base:
         base.pole.setTarget
             percent
                 0-1 사이의 실수
-                pole의 높이를 (percent)%로 설정
+                pole의 높이를 (percent)*100%로 설정
         '''
         double_api = _DoubleAPI()
         double_api.send_command(
@@ -35,7 +35,6 @@ class _Base:
         '''
         base.requestStatus
             event: DRBase.status
-            이 이벤트를 subscirbe 해야 base의 api를 쓸 수 있음
         '''
         double_api = _DoubleAPI()
         double_api.send_command('base.requestStatus')
