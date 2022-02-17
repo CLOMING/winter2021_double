@@ -4,7 +4,7 @@ from double3sdk.double_api import _DoubleAPI
 from double3sdk.double_error import DoubleError
 
 
-class _Template(str, Enum):
+class Template(str, Enum):
     preheat = "preheat"
     screen = "screen"
     h264ForWebRTC = "h264ForWebRTC"
@@ -16,7 +16,7 @@ class _Camera:
         self,
         width: Optional[int] = None,
         height: Optional[int] = None,
-        template: Optional[_Template] = None,
+        template: Optional[Template] = None,
         gstreamer: Optional[str] = None,
     ) -> None:
         '''
