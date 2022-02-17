@@ -33,25 +33,22 @@ class _Camera:
                 문자열 "appsrc name=d3src ! autovideosink"
         '''
 
-        if (
-            not (template is None)
-            and not (gstreamer is None)
-        ):
+        if template and gstreamer:
             raise DoubleError("Do not use templeate and gstreamer both")
 
         command: str = 'camera.enable'
         data: Dict[str, Any] = {}
 
-        if not (width is None):
+        if width:
             data["width"] = width
 
-        if not (height is None):
+        if height:
             data["height"] = height
 
-        if not (template is None):
+        if template:
             data["template"] = str(template)
 
-        if not (gstreamer is None):
+        if gstreamer:
             data["gstreamer"] = gstreamer
 
         double_api = _DoubleAPI()

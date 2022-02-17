@@ -3,9 +3,10 @@ import asyncio
 
 async def main_async():
     d3 = Double3SDK()
+    d3.events.subscribe(["DRCamera.enable", "DRBase.status", "DRAPI.status"])
     d3.api.request_status()
-    d3.events.subscribe(["DRCamera.enable"])
-    d3.camera.enable(template=Template.preheat)
+    d3.base.request_status()
+    d3.camera.enable(template=Template.screen, width=1152, height=720)
 
     while True:
         packet = d3.recv()
