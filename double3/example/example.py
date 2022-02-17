@@ -19,7 +19,6 @@ if __name__ == "__main__":
     import sys
     sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
     from double3sdk.camera import Template
-    print(Template.screen)
     from double3sdk import Double3SDK
 
     asyncio.run(main_async())

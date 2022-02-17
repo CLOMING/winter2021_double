@@ -49,7 +49,7 @@ class _Camera:
             data["height"] = height
 
         if not (template is None):
-            data["template"] = template
+            data["template"] = str(template)
 
         if not (gstreamer is None):
             data["gstreamer"] = gstreamer
