@@ -10,7 +10,7 @@ class DoubleError(Exception):
     def __str__(self) -> str:
         error_message: str = f'[DoubleError] {self.message}'
 
-        if not self.data:
+        if self.data:
             error_message += f'\n{self.data}'
 
         return error_message
