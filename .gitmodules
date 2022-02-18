@@ -1,0 +1,3 @@
+[submodule "double3/winter2021_recognition"]
+	path = double3/winter2021_recognition
+	url = git@github.com:junghyuncho/winter2021_recognition.git
