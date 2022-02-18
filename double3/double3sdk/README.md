@@ -1,4 +1,4 @@
-# Double3
+# Double3SDK
 Python SDK for controling Double3.  
 `Double3SDK` is just wrapper library of [`doubleapi`](https://github.com/doublerobotics/d3-sdk/tree/master/examples/python-basic).
 ## Installiation
