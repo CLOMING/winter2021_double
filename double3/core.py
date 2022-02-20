@@ -104,8 +104,7 @@ class Face:
             self.__face_thread.start()
 
     def __detect_mask(self) -> None:
-        mask_detector = MaskDetector(
-            AmazonImage.from_ndarray(self.img), confidence=70)
+        mask_detector = MaskDetector(AmazonImage.from_ndarray(self.img))
         people = mask_detector.run()
 
         if not people:
@@ -228,10 +227,14 @@ class Core:
 
         return img
 
-    def detect_person_rekognition(self, img: np.ndarray):
+    def detect_person_rekognition(self, img: np.ndarray) -> None:
+        current_period_count = self.rekognition_setting.period_count
+
+        if current_period_count % self.rekognition_setting.face_detect_period:
+            return
+
         people_detector = PeopleDetector(AmazonImage.from_ndarray(img))
         self.people = people_detector.run()
-        print(self.people)
 
     def detect_face_and_mask_rekognition(self, img: np.ndarray) -> None:
         self.rekognition_setting.period_count += 1
