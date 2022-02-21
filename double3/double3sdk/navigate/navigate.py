@@ -69,7 +69,7 @@ class _Navigate:
         double_api.send_command(command, data)
 
     def hit_result(
-        self,
+        self, data
     ) -> None:
         '''
         navigate.hitResult
@@ -78,10 +78,8 @@ class _Navigate:
         '''
 
         double_api = _DoubleAPI()
-        packet = double_api.recv()
 
         command: str = 'navigate.hitResult'
-        data = packet['data']
 
         double_api.send_command(command, data)
 
@@ -147,3 +145,11 @@ class _Navigate:
 
         double_api = _DoubleAPI()
         double_api.send_command(command, data)
+
+    def request_status(self) -> None:
+        '''
+        navigate.requestStatus
+            event: DRNavigateModule.status
+        '''
+        double_api = _DoubleAPI()
+        double_api.send_command('navigate.requestStatus')
