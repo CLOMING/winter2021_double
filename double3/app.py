@@ -3,6 +3,8 @@ if __name__ == '__main__':
     import sys
     sys.path.append(os.path.join(os.path.dirname(__file__),
                     'winter2021_recognition/amazon_rekognition'))
+    sys.path.append(os.path.join(os.path.dirname(__file__),
+                    'winter2021_recognition/amazon_polly'))
 
 from camera import Camera
 from core import Core
@@ -37,6 +39,9 @@ class App:
             key = self.window.show(img)
             if key == 27:  # ESC
                 break
+
+            # Robot 움직임 결정
+            # Amazon Polly 써서 소리지르기
 
         self.camera.close()
         self.window.close()
