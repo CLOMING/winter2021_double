@@ -8,8 +8,8 @@ import numpy as np
 class Camera:
     def __init__(
         self,
-        width: int = 1920,
-        height: int = 1080,
+        width: int,
+        height: int,
     ) -> None:
         self.width = width
         self.height = height

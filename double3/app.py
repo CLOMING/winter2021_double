@@ -10,6 +10,8 @@ if __name__ == '__main__':
 from camera import Camera
 from core import Core
 from robot import BaseRobot, Robot
+from speaker import Speaker
+from state import State
 from window import Window
 
 
@@ -18,16 +20,33 @@ class App:
         width: int = 1920
         height: int = 1080
 
-        self.core = Core()
+        self.state = State()
+
         self.camera = Camera(width=width,
                              height=height)
-        self.robot: BaseRobot = Robot()
-        self.window = Window(window_name='DEMO',
+        self.core = Core(self.state,
+                         capture=self.camera.capture)
+        self.robot: BaseRobot = Robot(self.state)
+        self.speaker = Speaker(self.state)
+        self.window = Window(self.state,
+                             window_name='DEMO',
                              width=width,
                              height=height,
-                             on_lbutton_down=lambda *_: self.core.switch())
+                             capture=self.camera.capture,
+                             on_lbutton_down=lambda *_: self.core.close() if self.state.is_core_running else self.core.start())
 
     def main(self):
+        self.set()
+        try:
+            self.window.start()
+            self.core.start()
+            self.robot.start()
+            self.speaker.start()
+        except Exception as e:
+            print(e)
+            self.close()
+
+    def old_main(self):
         self.window.set()
         self.camera.set()
         self.robot.set()
@@ -53,6 +72,19 @@ class App:
         self.camera.close()
         self.window.close()
         self.robot.close()
+
+    def set(self):
+        self.window.set()
+        self.camera.set()
+        self.robot.set()
+        self.speaker.set()
+
+    def close(self):
+        self.core.close()
+        self.camera.close()
+        self.window.close()
+        self.robot.close()
+        self.speaker.close()
 
 
 if __name__ == "__main__":

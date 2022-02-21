@@ -1,323 +1,208 @@
-from dataclasses import dataclass
-from threading import Thread
-from typing import List, Optional, Tuple
-
-import cv2
+from collections import deque
+from multiprocessing import Process
+from time import sleep
+from typing import Callable, Deque, Tuple
 import numpy as np
-from PIL import ImageFont, ImageDraw, Image
 
-from robot import MovingStrategy
-from winter2021_recognition.amazon_polly import TTS, TTSAudioStreamNotExistException
-from winter2021_recognition.amazon_rekognition import AmazonImage, FaceManager, FaceManagerExceptionFaceNotExistException, FaceManagerExceptionFaceNotSearchedException, FaceMatch, MaskDetector, MaskStatus, PeopleDetector, UserDatabase
-from winter2021_recognition.amazon_rekognition.detect_labels import PeopleDetector, Person
-from winter2021_recognition.amazon_rekognition.utils import calculate_IoU
-
-
-@dataclass
-class RekognitionSetting:
-    period: int = 50
-    face_detect_period: int = 5
-    period_count: int = 0
-    is_enabled: bool = False
-
-
-class Box:
-    def __init__(
-        self,
-        left: int,
-        right: int,
-        top: int,
-        bottom: int,
-        frame: int,
-    ) -> None:
-        self.left = int(left)
-        self.right = int(right)
-        self.top = int(top)
-        self.bottom = int(bottom)
-        self.frame = int(frame)
-
-    def to_tuple(self) -> Tuple[int, int, int, int]:
-        return self.left, self.right, self.top, self.bottom
-
-
-class Face:
-    def __init__(
-        self,
-        box: Box,
-        img: np.ndarray,
-    ) -> None:
-        self.external_id: Optional[str] = None
-        self.box = box
-        self.img = img
-        self.mask_status: MaskStatus = MaskStatus.UNKNOWN
-        self.name: Optional[str] = None
-        self.__mask_thread: Optional[Thread] = None
-        self.__face_thread: Optional[Thread] = None
-        self.__speak_thread: Optional[Thread] = None
-
-    @property
-    def frame(self) -> int:
-        return self.box.frame
-
-    def set_mask_thread(self) -> None:
-        if self.__mask_thread and self.__mask_thread.is_alive():
-            return
-
-        self.__mask_thread = Thread(target=self.__detect_mask)
-
-    def set_face_thread(self) -> None:
-        if self.__face_thread and self.__face_thread.is_alive():
-            return
-
-        self.__face_thread = Thread(target=self.__detect_face)
-
-    def set_speak_thread(self) -> None:
-        if self.__speak_thread and self.__speak_thread.is_alive():
-            return
-
-        self.__speak_thread = Thread(target=self.__speak)
-
-    def set_external_id(self, external_id: Optional[str]) -> None:
-        if external_id:
-            self.external_id = external_id
-
-    def set_name(self, name: Optional[str]) -> None:
-        if name:
-            self.name = name
-
-    def set_mask_status(self, mask_status: MaskStatus) -> None:
-        if not (mask_status == MaskStatus.UNKNOWN):
-            self.mask_status = mask_status
-
-    def compare(self, box: Box) -> bool:
-        return calculate_IoU(box.to_tuple(), self.box.to_tuple()) >= 0.5
-
-    def update(self, box: Box, img: np.ndarray) -> None:
-        self.box = box
-        self.img = img
-
-    def run_rekognition(self) -> None:
-        self.update_mask_status()
-        self.update_name()
-
-    def update_mask_status(self) -> None:
-        self.set_mask_thread()
-
-        if not self.__mask_thread.is_alive():
-            self.__mask_thread.start()
-
-    def update_name(self) -> None:
-        self.set_face_thread()
-
-        if not self.__face_thread.is_alive():
-            self.__face_thread.start()
-
-    def speak(self) -> None:
-        self.set_speak_thread()
-
-        if not self.__speak_thread.is_alive():
-            self.__speak_thread.start()
-
-        self.__speak_thread.join()
-
-    def __detect_mask(self) -> None:
-        mask_detector = MaskDetector(AmazonImage.from_ndarray(self.img))
-        people = mask_detector.run()
-
-        if not people:
-            return
-
-        person = people[0]
-
-        self.set_mask_status(person.mask_status)
-
-    def __detect_face(self) -> None:
-        image = AmazonImage.from_ndarray(self.img)
-        face_manager = FaceManager()
-
-        face_match: FaceMatch
-        try:
-            face_match = face_manager.search_only_one_face(image)
-        except FaceManagerExceptionFaceNotSearchedException:
-            face_match = None
-
-        user_id = str
-        if not face_match:
-            try:
-                user_id, _ = face_manager.add_face(
-                    image=image, check_face_exist=False)
-            except:
-                return
-        else:
-            user_id = face_match.face.external_image_id
-
-        name = UserDatabase().read(user_id).name
-
-        self.set_external_id(user_id)
-        self.set_name(name)
-
-    def __speak(self) -> None:
-        # TODO: 마스크를 쓰지 않은 사람에게 경고: 어떤 사람에게 경고할지 여기서 결정
-        tts = TTS()
-        tts.read("안녕 안녕 나는 지 수 야")
-
-    def draw(self, img: np.ndarray) -> np.ndarray:
-        mask_color_dict = {
-            MaskStatus.NOT_WEARED: (0, 0, 255),
-            MaskStatus.UNKNOWN: (0, 0, 0),
-            MaskStatus.WEARED: (0, 255, 0),
-        }
-
-        color = mask_color_dict[self.mask_status]
-        cv2.rectangle(
-            img,
-            (self.box.left, self.box.top),
-            (self.box.right, self.box.bottom),
-            color,
-            thickness=2,
-        )
-
-        mask_text_dict = {
-            MaskStatus.NOT_WEARED: '마스크 미착용',
-            MaskStatus.UNKNOWN: '',
-            MaskStatus.WEARED: '마스크 착용'
-        }
-
-        mask_text = mask_text_dict[self.mask_status]
-
-        text = ''
-
-        if self.name:
-            text += self.name
-
-        if mask_text:
-            text += f': {mask_text}'
-
-        org = (self.box.left, self.box.bottom)
-
-        pil_image = Image.fromarray(img)
-        draw = ImageDraw.Draw(pil_image)
-        font = ImageFont.truetype("fonts/gulim.ttc", 20)
-        draw.text(org, text, font=font, fill=color)
-
-        return np.array(pil_image)
+from state import Box, Face, State
+from winter2021_recognition.amazon_rekognition import AmazonImage, FaceManager, FaceManagerExceptionFaceNotExistException, FaceManagerExceptionFaceNotSearchedException, MaskDetector, MaskStatus, PeopleDetector, UserDatabase
 
 
 class Core:
-    def __init__(self) -> None:
-        self.rekognition_setting = RekognitionSetting()
-        self.faces: List[Face] = []
-        self.people: List[Person] = []
+    def __init__(
+        self,
+        state: State,
+        capture: Callable[[], Tuple[bool, np.ndarray]]
+    ) -> None:
+        self.state = state
+        self.capture = capture
+        self.face_manager = FaceManager()
+        self.db = UserDatabase()
 
-    def switch(self):
-        self.rekognition_setting.is_enabled = not self.rekognition_setting.is_enabled
-        if self.rekognition_setting.is_enabled:
-            self.faces.clear()
+    def __set(self) -> None:
+        self.detect_person_thread = Process(target=self.__detect_person)
 
-    def detect_face_and_mask(self, img: np.ndarray) -> np.ndarray:
-        if not self.rekognition_setting.is_enabled:
-            img = self.show_help_text(img)
-            return img
+        self.crop_image_thread = Process(target=self.__crop_image)
+        self.__crop_image_count = 0
 
-        t = Thread(target=lambda: self.detect_face_and_mask_rekognition(img))
-        t.start()
+        self.mask_status_queue: Deque[Face] = deque()
+        self.detect_mask_thread = Process(target=self.__update_mask_status)
+        self.manage_mask_status_queue_thread = Process(
+            target=self.__manage_mask_status_queue)
 
-        img = self.draw(img)
+        self.name_queue: Deque[Face] = deque()
+        self.search_face_thread = Process(target=self.__update_name)
+        self.manage_name_queue_thread = Process(
+            target=self.__manage_name_queue)
 
-        return img
-
-    def detect_person(self, img: np.ndarray):
-        if not self.rekognition_setting.is_enabled:
+    def start(self) -> None:
+        if self.state.is_core_running:
             return
 
-        t = Thread(target=lambda: self.detect_person_rekognition(img))
-        t.start()
+        self.state.is_core_running = True
+        self.__set()
+        self.detect_person_thread.start()
+        self.crop_image_thread.start()
+        self.manage_mask_status_queue_thread.start()
+        self.detect_mask_thread.start()
+        self.manage_name_queue_thread.start()
+        self.search_face_thread.start()
 
-    def draw(self, img: np.ndarray) -> np.ndarray:
-        for face in self.faces:
-            img = face.draw(img)
-
-        return img
-
-    def show_help_text(self, img: np.ndarray) -> np.ndarray:
-        text = 'Tap screen to start rekognition'
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        text_size = cv2.getTextSize(text, font, 1, 2)[0]
-        org = (int((img.shape[1] - text_size[0]) / 2),
-               int((img.shape[0] + text_size[1]) / 2))
-        cv2.putText(img, text, org, font, 1, (255, 255, 255), 2,)
-
-        return img
-
-    def detect_person_rekognition(self, img: np.ndarray) -> None:
-        current_period_count = self.rekognition_setting.period_count
-
-        if current_period_count % self.rekognition_setting.face_detect_period:
+    def close(self) -> None:
+        if not self.state.is_core_running:
             return
 
-        people_detector = PeopleDetector(AmazonImage.from_ndarray(img))
-        self.people = people_detector.run()
+        self.state.is_core_running = False
+        self.detect_person_thread.stop()
+        self.crop_image_thread.stop()
+        self.manage_mask_status_queue_thread.stop()
+        self.detect_mask_thread.stop()
+        self.manage_name_queue_thread.stop()
+        self.search_face_thread.stop()
+        self.state.clear()
 
-    def detect_face_and_mask_rekognition(self, img: np.ndarray) -> None:
-        self.rekognition_setting.period_count += 1
+    def __detect_person(self) -> None:
+        while True:
+            _, img = self.capture()
+            people_detector = PeopleDetector(AmazonImage.from_ndarray(img))
+            self.state.people = people_detector.run()
 
-        current_period_count = self.rekognition_setting.period_count
+            sleep(0.1)
 
-        if current_period_count % self.rekognition_setting.face_detect_period:
-            return
+    def __crop_image(self) -> None:
+        while True:
+            _, img = self.capture()
+            self.__crop_image_count += 1
+            try:
+                cropped_img_infos = self.face_manager.crop_image(
+                    AmazonImage.from_ndarray(img))
+            except FaceManagerExceptionFaceNotExistException:
+                cropped_img_infos = None
 
-        face_manager = FaceManager()
-        try:
-            cropped_img_infos = face_manager.crop_image(
-                AmazonImage.from_ndarray(img))
-        except FaceManagerExceptionFaceNotExistException:
-            return
-
-        for infos in cropped_img_infos:
-            is_exist = False
-            width, height = infos[0].shape[1], infos[0].shape[0]
-            left, top = infos[1], infos[2]
-            right, bottom = left + width, top + height
-            box = Box(left, right, top, bottom, current_period_count)
-            for face in self.faces:
-                if face.frame == current_period_count:
-                    continue
-
-                if not face.compare(box):
-                    continue
-
-                face.update(box, infos[0])
-                is_exist = True
-                break
-
-            if not is_exist:
-                self.faces.append(Face(box, infos[0]))
-
-        for i, face in enumerate(self.faces):
-            if face.frame == current_period_count:
+            if not cropped_img_infos:
+                # TODO: 사진에 얼굴 검출 결과가 없을 때
+                sleep(0.1)
                 continue
 
-            del self.faces[i]
+            for info in cropped_img_infos:
+                img = info[0]
+                width, height = img.shape[1], img.shape[0]
+                left, top = info[1], info[2]
+                right, bottom = left + width, top + height
+                box = Box(left, right, top, bottom, self.__crop_image_count)
 
-        if current_period_count % self.rekognition_setting.period:
-            return
+                is_exist = False
+                for face in self.state.faces:
+                    if face.frame == self.__crop_image_count:
+                        continue
 
-        threads: List[Thread] = []
-        for face in self.faces:
-            thread = Thread(target=face.run_rekognition)
-            thread.start()
+                    if not face.compare(box):
+                        continue
 
-        for thread in threads:
-            thread.join()
+                    face.update(box, img)
+                    is_exist = True
+                    break
 
-    def speak(self) -> None:
-        # TODO: 마스크를 쓰지 않은 사람에게 경고: 얼마마다 경고할지 여기서 결정
-        if True:
-            return
+                if not is_exist:
+                    self.state.faces.append(Face(box, img))
 
-        for face in self.faces:
-            face.speak()
+            faces = [face for face in self.state.faces]
+            for i, face in enumerate(faces):
+                if face.frame == self.__crop_image_count:
+                    continue
 
-    def decide_move(self) -> MovingStrategy:
-        # TODO: 로봇 움직이기: 어떻게 움직일지 결정
-        pass
+                del self.state.faces[i]
+
+            sleep(0.1)
+
+    def __manage_mask_status_queue(self) -> None:
+        order_dict = {
+            MaskStatus.UNKNOWN: 1,
+            MaskStatus.NOT_WEARED: 2,
+            MaskStatus.WEARED: 3,
+        }
+
+        while True:
+            if self.mask_status_queue:
+                continue
+
+            if not self.state.faces:
+                continue
+
+            faces = [face for face in self.state.faces]
+            faces.sort(key=lambda face: order_dict[face.mask_status])
+
+            for face in faces:
+                self.mask_status_queue.append(face)
+
+    def __update_mask_status(self) -> None:
+        while True:
+            if not self.mask_status_queue:
+                sleep(0.1)
+                continue
+
+            face = self.mask_status_queue.popleft()
+
+            def runner(face: Face):
+                mask_detector = MaskDetector(
+                    AmazonImage.from_ndarray(face.img))
+                people = mask_detector.run()
+
+                if not people:
+                    return
+
+                person = people[0]
+                self.state.set_mask_status(face.id, person.mask_status)
+
+            process = Process(target=runner, args=(face,))
+            process.start()
+
+            sleep(0.1)
+
+    def __manage_name_queue(self) -> None:
+        while True:
+            if self.name_queue:
+                continue
+
+            if not self.state.faces:
+                continue
+
+            faces = [face for face in self.state.faces]
+            faces.sort(key=lambda face: 1 if not face.name else 2)
+
+            for face in faces:
+                self.name_queue.append(face)
+
+    def __update_name(self) -> None:
+        while True:
+            if not self.name_queue:
+                sleep(0.1)
+                continue
+
+            face = self.name_queue.popleft()
+
+            def runner(face: Face):
+                image = AmazonImage.from_ndarray(face.img)
+                try:
+                    face_match = self.face_manager.search_only_one_face(image)
+                except FaceManagerExceptionFaceNotSearchedException:
+                    face_match = None
+
+                user_id: str
+                if not face_match:
+                    try:
+                        user_id, _ = self.face_manager.add_face(
+                            image=image, check_face_exist=False)
+                    except:
+                        return
+                else:
+                    user_id = face_match.face.external_image_id
+
+                name = self.db.read(user_id).name
+
+                self.state.set_face_info(face.id, user_id, name)
+
+            process = Process(target=runner, args=(face,))
+            process.start()
+
+            sleep(0.1)
