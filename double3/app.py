@@ -5,9 +5,11 @@ if __name__ == '__main__':
                     'winter2021_recognition/amazon_rekognition'))
     sys.path.append(os.path.join(os.path.dirname(__file__),
                     'winter2021_recognition/amazon_polly'))
+    sys.path.append(os.path.join(os.path.dirname(__file__), 'double3sdk'))
 
 from camera import Camera
 from core import Core
+from robot import BaseRobot, Robot
 from window import Window
 
 
@@ -19,6 +21,7 @@ class App:
         self.core = Core()
         self.camera = Camera(width=width,
                              height=height)
+        self.robot: BaseRobot = Robot()
         self.window = Window(window_name='DEMO',
                              width=width,
                              height=height,
@@ -27,6 +30,7 @@ class App:
     def main(self):
         self.window.set()
         self.camera.set()
+        self.robot.set()
         while True:
             if not self.window.is_opened():
                 break
@@ -38,13 +42,17 @@ class App:
 
             key = self.window.show(img)
             if key == 27:  # ESC
+                if self.core.rekognition_setting.is_enabled:
+                    self.core.switch()
                 break
 
-            # Robot 움직임 결정
-            # Amazon Polly 써서 소리지르기
+            moving_strategy = self.core.decide_move()
+            self.robot.move(moving_strategy)
+            self.core.speak()
 
         self.camera.close()
         self.window.close()
+        self.robot.close()
 
 
 if __name__ == "__main__":

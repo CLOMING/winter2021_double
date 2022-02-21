@@ -55,6 +55,8 @@ class Double3SDK:
         self.updater = _Updater()
         self.webrtc = _Webrtc()
 
+        _DoubleAPI()
+
     def recv(self) -> str:
         double_api = _DoubleAPI()
         return str(double_api.recv())

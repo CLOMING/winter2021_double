@@ -6,6 +6,8 @@ import cv2
 import numpy as np
 from PIL import ImageFont, ImageDraw, Image
 
+from robot import MovingStrategy
+from winter2021_recognition.amazon_polly import TTS, TTSAudioStreamNotExistException
 from winter2021_recognition.amazon_rekognition import AmazonImage, FaceManager, FaceManagerExceptionFaceNotExistException, FaceManagerExceptionFaceNotSearchedException, FaceMatch, MaskDetector, MaskStatus, PeopleDetector, UserDatabase
 from winter2021_recognition.amazon_rekognition.detect_labels import PeopleDetector, Person
 from winter2021_recognition.amazon_rekognition.utils import calculate_IoU
@@ -51,6 +53,7 @@ class Face:
         self.name: Optional[str] = None
         self.__mask_thread: Optional[Thread] = None
         self.__face_thread: Optional[Thread] = None
+        self.__speak_thread: Optional[Thread] = None
 
     @property
     def frame(self) -> int:
@@ -67,6 +70,12 @@ class Face:
             return
 
         self.__face_thread = Thread(target=self.__detect_face)
+
+    def set_speak_thread(self) -> None:
+        if self.__speak_thread and self.__speak_thread.is_alive():
+            return
+
+        self.__speak_thread = Thread(target=self.__speak)
 
     def set_external_id(self, external_id: Optional[str]) -> None:
         if external_id:
@@ -103,6 +112,14 @@ class Face:
         if not self.__face_thread.is_alive():
             self.__face_thread.start()
 
+    def speak(self) -> None:
+        self.set_speak_thread()
+
+        if not self.__speak_thread.is_alive():
+            self.__speak_thread.start()
+
+        self.__speak_thread.join()
+
     def __detect_mask(self) -> None:
         mask_detector = MaskDetector(AmazonImage.from_ndarray(self.img))
         people = mask_detector.run()
@@ -138,6 +155,11 @@ class Face:
 
         self.set_external_id(user_id)
         self.set_name(name)
+
+    def __speak(self) -> None:
+        # TODO: 마스크를 쓰지 않은 사람에게 경고: 어떤 사람에게 경고할지 여기서 결정
+        tts = TTS()
+        tts.read("안녕 안녕 나는 지 수 야")
 
     def draw(self, img: np.ndarray) -> np.ndarray:
         mask_color_dict = {
@@ -287,3 +309,15 @@ class Core:
 
         for thread in threads:
             thread.join()
+
+    def speak(self) -> None:
+        # TODO: 마스크를 쓰지 않은 사람에게 경고: 얼마마다 경고할지 여기서 결정
+        if True:
+            return
+
+        for face in self.faces:
+            face.speak()
+
+    def decide_move(self) -> MovingStrategy:
+        # TODO: 로봇 움직이기: 어떻게 움직일지 결정
+        pass
