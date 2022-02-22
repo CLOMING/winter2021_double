@@ -19,19 +19,19 @@ class Speaker:
         except:
             self.sdk = None
 
-        self.detect_thread = Process(target=self.__check)
-        self.read_thread = Process(target=self.__run)
+        self.detect_process = Process(target=self.__check)
+        self.read_process = Process(target=self.__run)
 
     def set(self) -> None:
         self.enable_speaker()
 
     def start(self) -> None:
-        self.detect_thread.start()
-        self.read_thread.start()
+        self.detect_process.start()
+        self.read_process.start()
 
     def close(self) -> None:
-        self.detect_thread.stop()
-        self.read_thread.stop()
+        self.detect_process.terminate()
+        self.read_process.terminate()
         self.disable_speaker()
 
     def enable_speaker(self) -> None:

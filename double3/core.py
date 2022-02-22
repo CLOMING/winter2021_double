@@ -20,19 +20,19 @@ class Core:
         self.db = UserDatabase()
 
     def __set(self) -> None:
-        self.detect_person_thread = Process(target=self.__detect_person)
+        self.detect_person_process = Process(target=self.__detect_person)
 
-        self.crop_image_thread = Process(target=self.__crop_image)
+        self.crop_image_process = Process(target=self.__crop_image)
         self.__crop_image_count = 0
 
         self.mask_status_queue: Deque[Face] = deque()
-        self.detect_mask_thread = Process(target=self.__update_mask_status)
-        self.manage_mask_status_queue_thread = Process(
+        self.detect_mask_process = Process(target=self.__update_mask_status)
+        self.manage_mask_status_queue_process = Process(
             target=self.__manage_mask_status_queue)
 
         self.name_queue: Deque[Face] = deque()
-        self.search_face_thread = Process(target=self.__update_name)
-        self.manage_name_queue_thread = Process(
+        self.search_face_process = Process(target=self.__update_name)
+        self.manage_name_queue_process = Process(
             target=self.__manage_name_queue)
 
     def start(self) -> None:
@@ -41,24 +41,24 @@ class Core:
 
         self.state.is_core_running = True
         self.__set()
-        self.detect_person_thread.start()
-        self.crop_image_thread.start()
-        self.manage_mask_status_queue_thread.start()
-        self.detect_mask_thread.start()
-        self.manage_name_queue_thread.start()
-        self.search_face_thread.start()
+        self.detect_person_process.start()
+        self.crop_image_process.start()
+        self.manage_mask_status_queue_process.start()
+        self.detect_mask_process.start()
+        self.manage_name_queue_process.start()
+        self.search_face_process.start()
 
     def close(self) -> None:
         if not self.state.is_core_running:
             return
 
         self.state.is_core_running = False
-        self.detect_person_thread.stop()
-        self.crop_image_thread.stop()
-        self.manage_mask_status_queue_thread.stop()
-        self.detect_mask_thread.stop()
-        self.manage_name_queue_thread.stop()
-        self.search_face_thread.stop()
+        self.detect_person_process.terminate()
+        self.crop_image_process.terminate()
+        self.manage_mask_status_queue_process.terminate()
+        self.detect_mask_process.terminate()
+        self.manage_name_queue_process.terminate()
+        self.search_face_process.terminate()
         self.state.clear()
 
     def __detect_person(self) -> None:

@@ -9,20 +9,20 @@ class BaseRobot(metaclass=ABCMeta):
         self.state = state
         self.moving_strategies: List[MovingStrategy] = []
 
-        self.check_thread = Process(target=self.__check)
-        self.move_thread = Process(target=self.__run)
+        self.check_process = Process(target=self.__check)
+        self.move_process = Process(target=self.__run)
 
     def set(self):
         self.enable_camara()
         self.enable_navigate()
 
     def start(self):
-        self.check_thread.start()
-        self.move_thread.start()
+        self.check_process.start()
+        self.move_process.start()
 
     def close(self):
-        self.check_thread.stop()
-        self.move_thread.stop()
+        self.check_process.terminate()
+        self.move_process.terminate()
         self.disable_camera()
         self.disable_navigate()
 
