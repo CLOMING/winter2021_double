@@ -1,7 +1,13 @@
 from abc import ABCMeta, abstractmethod
-from multiprocessing import Process
-from pip import List
+from typing import Callable, List
+
+from thread import StoppableThread
 from state import State
+
+
+class MovingStrategy:
+    # TODO: double3sdk
+    pass
 
 
 class BaseRobot(metaclass=ABCMeta):
@@ -9,22 +15,36 @@ class BaseRobot(metaclass=ABCMeta):
         self.state = state
         self.moving_strategies: List[MovingStrategy] = []
 
-        self.check_process = Process(target=self.__check)
-        self.move_process = Process(target=self.__run)
+        self.check_thread = CheckRobotThread(
+            self.get_state, self.get_moving_strategies, self.update_moving_strategies)
+        self.move_thread = RunRobotThread(self.get_moving_strategies)
 
     def set(self):
         self.enable_camara()
         self.enable_navigate()
 
     def start(self):
-        self.check_process.start()
-        self.move_process.start()
+        self.check_thread.start()
+        self.move_thread.start()
 
     def close(self):
-        self.check_process.terminate()
-        self.move_process.terminate()
+        self.check_thread.terminate()
+        self.check_thread.join()
+
+        self.move_thread.terminate()
+        self.move_thread.join()
+
         self.disable_camera()
         self.disable_navigate()
+
+    def get_state(self) -> State:
+        return self.state
+
+    def update_moving_strategies(self, moving_strategies: List[MovingStrategy]) -> None:
+        self.moving_strategies = moving_strategies
+
+    def get_moving_strategies(self) -> List[MovingStrategy]:
+        return self.moving_strategies
 
     @abstractmethod
     def enable_navigate(self):
@@ -42,20 +62,33 @@ class BaseRobot(metaclass=ABCMeta):
     def disable_camera(self):
         pass
 
-    def __check(self) -> None:
-        while True:
-            # TODO: 로봇을 움직여야 하는지 여부 판단
-            pass
 
-    def __run(self) -> None:
-        while True:
+class CheckRobotThread(StoppableThread):
+    def __init__(self,
+                 get_state: Callable[[], State],
+                 get_moving_strategies: Callable[[], List[MovingStrategy]],
+                 update_moving_strategies: Callable[[List[MovingStrategy]], None]):
+        super().__init__()
+        self.get_state = get_state
+        self.get_moving_strategies = get_moving_strategies
+        self.update_moving_strategies = update_moving_strategies
+
+    def run(self):
+        while not self.stopped():
+            # TODO: 로봇을 어떻게 움직일지 여부 판단
+            self._stop_event.wait(0.1)
+
+
+class RunRobotThread(StoppableThread):
+    def __init__(self,
+                 get_moving_strategies: Callable[[], List[MovingStrategy]]):
+        super().__init__()
+        self.get_moving_strategies = get_moving_strategies
+
+    def run(self):
+        while not self.stopped():
             # TODO: 로봇 움직이기
-            pass
-
-
-class MovingStrategy:
-    # TODO: double3sdk
-    pass
+            self._stop_event.wait(0.1)
 
 
 try:

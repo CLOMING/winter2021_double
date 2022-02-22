@@ -1,7 +1,6 @@
 from typing import Any, Callable, Final, Optional, Tuple
 
 import cv2
-from multiprocessing import Process
 import numpy as np
 from PIL import ImageFont, ImageDraw, Image
 
@@ -26,8 +25,7 @@ class Window:
         self.height: Final = height
         self.capture: Final = capture
         self.on_lbutton_down: Final = on_lbutton_down
-
-        self.process = Process(target=self.__draw)
+        self.stop_flag = False
 
     def set(self) -> None:
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
@@ -38,10 +36,10 @@ class Window:
             self.window_name, lambda *args: self.on_mouse_click(*args))
 
     def start(self) -> None:
-        self.process.start()
+        self.__draw()
 
     def close(self) -> None:
-        self.process.kill()
+        self.stop_flage = True
         cv2.destroyWindow(self.window_name)
 
     def on_mouse_click(self, event, x, y, flags, params):
@@ -53,10 +51,15 @@ class Window:
 
     def __draw(self) -> None:
         while True:
+            if self.stop_flag:
+                raise Exception('stop flag set.')
+
             if not self.is_opened():
-                break
+                raise Exception('window is not opened')
 
             _, img = self.capture()
+
+            self.state.image = img
 
             if not self.state.is_core_running:
                 img = self.__show_help_text(img)
@@ -67,7 +70,7 @@ class Window:
             key = cv2.waitKey(10)
 
             if key == 27:  # Press ESC
-                break
+                raise Exception('Press esc')
 
     def __show_help_text(self, img: np.ndarray) -> np.ndarray:
         text = 'Tap screen to start rekognition'

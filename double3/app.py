@@ -39,39 +39,12 @@ class App:
         self.set()
         try:
             self.window.start()
-            self.core.start()
             self.robot.start()
             self.speaker.start()
         except Exception as e:
-            print(e)
+            print(f'Exception Raised: {e}')
+        finally:
             self.close()
-
-    def old_main(self):
-        self.window.set()
-        self.camera.set()
-        self.robot.set()
-        while True:
-            if not self.window.is_opened():
-                break
-
-            _, img = self.camera.capture()
-
-            self.core.detect_person(img)
-            img = self.core.detect_face_and_mask(img)
-
-            key = self.window.show(img)
-            if key == 27:  # ESC
-                if self.core.rekognition_setting.is_enabled:
-                    self.core.switch()
-                break
-
-            moving_strategy = self.core.decide_move()
-            self.robot.move(moving_strategy)
-            self.core.speak()
-
-        self.camera.close()
-        self.window.close()
-        self.robot.close()
 
     def set(self):
         self.window.set()
@@ -80,11 +53,17 @@ class App:
         self.speaker.set()
 
     def close(self):
-        self.core.close()
-        self.camera.close()
-        self.window.close()
-        self.robot.close()
-        self.speaker.close()
+        try:
+            self.window.close()
+            self.state.lock.release()
+            self.camera.close()
+            self.core.close()
+            self.robot.close()
+            self.speaker.close()
+        except:
+            pass
+        finally:
+            sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from multiprocessing import Lock
+from threading import Lock
 from typing import List, Optional, Tuple
 import numpy as np
 
@@ -9,22 +9,33 @@ from winter2021_recognition.amazon_rekognition.utils import calculate_IoU
 
 class State:
     def __init__(self) -> None:
+        self.image: Optional[np.ndarray] = None
         self.faces: List[Face] = []
         self.people: List[Person] = []
         self.is_core_running: bool = False
         self.lock = Lock()
 
     def clear(self) -> None:
-        self.faces.clear()
-        self.people.clear()
+        try:
+            self.lock.release()
+            try:
+                self.lock.acquire()
+                self.faces.clear()
+                self.people.clear()
+            finally:
+                self.lock.release()
+        except:
+            pass
 
     def set_face_info(self, id: int, external_id: Optional[str], name: Optional[str]) -> None:
         self.lock.acquire()
         try:
             face = [face for face in self.faces if face.id == id]
-            index = self.faces.index(face)
+            index = self.faces.index(face[0])
             self.faces[index].set_external_id(external_id)
             self.faces[index].set_name(name)
+        except:
+            pass
         finally:
             self.lock.release()
 
@@ -32,8 +43,10 @@ class State:
         self.lock.acquire()
         try:
             face = [face for face in self.faces if face.id == id]
-            index = self.faces.index(face)
+            index = self.faces.index(face[0])
             self.faces[index].set_mask_status(mask_status)
+        except:
+            pass
         finally:
             self.lock.release()
 
