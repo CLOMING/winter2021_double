@@ -77,10 +77,6 @@ class CheckRobotThread(StoppableThread):
 
     def run(self):
         while not self.stopped():
-            if not self.get_state().is_core_running:
-                self._stop_event.wait(0.1)
-                continue
-
             # TODO: 로봇을 어떻게 움직일지 여부 판단
             self._stop_event.wait(0.1)
 

@@ -59,8 +59,6 @@ class Window:
 
             _, img = self.capture()
 
-            self.state.image = img
-
             if not self.state.is_core_running:
                 img = self.__show_help_text(img)
             else:

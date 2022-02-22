@@ -9,7 +9,6 @@ from winter2021_recognition.amazon_rekognition.utils import calculate_IoU
 
 class State:
     def __init__(self) -> None:
-        self.image: Optional[np.ndarray] = None
         self.faces: List[Face] = []
         self.people: List[Person] = []
         self.is_core_running: bool = False
