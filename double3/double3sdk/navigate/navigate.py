@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from double3sdk.double_api import _DoubleAPI
 
 

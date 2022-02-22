@@ -57,8 +57,8 @@ class _Base:
 
     def pole_stop(self) -> None:
         '''
-        base.pole.stop
+        base.pole.terminate
             폴 조절 중지
         '''
         double_api = _DoubleAPI()
-        double_api.send_command('base.pole.stop')
+        double_api.send_command('base.pole.terminate')
