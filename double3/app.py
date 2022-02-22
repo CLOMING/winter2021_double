@@ -33,14 +33,22 @@ class App:
                              width=width,
                              height=height,
                              capture=self.camera.capture,
-                             on_lbutton_down=lambda *_: self.core.close() if self.state.is_core_running else self.core.start())
+                             on_lbutton_down=lambda *_: self.switch())
+
+    def switch(self):
+        if self.state.is_core_running:
+            self.core.close()
+            self.robot.close()
+            self.speaker.close()
+        else:
+            self.core.start()
+            self.robot.start()
+            self.speaker.start()
 
     def main(self):
         self.set()
         try:
             self.window.start()
-            self.robot.start()
-            self.speaker.start()
         except Exception as e:
             print(f'Exception Raised: {e}')
         finally:
@@ -49,8 +57,6 @@ class App:
     def set(self):
         self.window.set()
         self.camera.set()
-        self.robot.set()
-        self.speaker.set()
 
     def close(self):
         try:

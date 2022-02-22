@@ -15,15 +15,15 @@ class BaseRobot(metaclass=ABCMeta):
         self.state = state
         self.moving_strategies: List[MovingStrategy] = []
 
+    def __set(self):
+        self.enable_camara()
+        self.enable_navigate()
         self.check_thread = CheckRobotThread(
             self.get_state, self.get_moving_strategies, self.update_moving_strategies)
         self.move_thread = RunRobotThread(self.get_moving_strategies)
 
-    def set(self):
-        self.enable_camara()
-        self.enable_navigate()
-
     def start(self):
+        self.__set()
         self.check_thread.start()
         self.move_thread.start()
 
@@ -33,6 +33,8 @@ class BaseRobot(metaclass=ABCMeta):
 
         self.move_thread.terminate()
         self.move_thread.join()
+
+        self.moving_strategies.clear()
 
         self.disable_camera()
         self.disable_navigate()
@@ -75,6 +77,10 @@ class CheckRobotThread(StoppableThread):
 
     def run(self):
         while not self.stopped():
+            if not self.get_state().is_core_running:
+                self._stop_event.wait(0.1)
+                continue
+
             # TODO: 로봇을 어떻게 움직일지 여부 판단
             self._stop_event.wait(0.1)
 

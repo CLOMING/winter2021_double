@@ -3,6 +3,7 @@ from typing import Callable, List
 
 from state import Face, State
 from thread import StoppableThread
+from winter2021_recognition.amazon_rekognition import MaskStatus
 from winter2021_recognition.amazon_polly import TTS
 
 
@@ -26,15 +27,15 @@ class Speaker:
         except:
             self.sdk = None
 
+    def __set(self) -> None:
+        self.enable_speaker()
         self.detect_thread = DetectTargetThread(
-            self.get_targets, self.update_targets)
+            self.state, self.get_targets, self.update_targets)
         self.read_thread = SpeakThread(
             self.get_targets, self.remove_target, self.check_target_exist)
 
-    def set(self) -> None:
-        self.enable_speaker()
-
     def start(self) -> None:
+        self.__set()
         self.detect_thread.start()
         self.read_thread.start()
 
@@ -44,6 +45,8 @@ class Speaker:
 
         self.read_thread.terminate()
         self.read_thread.join()
+
+        self.targets.clear()
 
         self.disable_speaker()
 
@@ -74,17 +77,23 @@ class Speaker:
 
 class DetectTargetThread(StoppableThread):
     def __init__(self,
+                 state: State,
                  get_targets: Callable[[], List[Target]],
                  update_targets: Callable[[List[Target]], None]):
         super().__init__()
+        self.state = state
         self.get_targets = get_targets
         self.update_targets = update_targets
 
     def run(self):
         while not self.stopped():
-            # TODO: TTS: 어떤 사람에게 마스크를 쓰라고 경고할지 target 결정
-            # targets = []
-            # self.update_targets(targets)
+            if not self.state.is_core_running:
+                self._stop_event.wait(0.1)
+                continue
+
+            targets = [Target(
+                face) for face in self.state.faces if face.mask_status == MaskStatus.NOT_WEARED]
+            self.update_targets(targets)
 
             self._stop_event.wait(0.1)
 
