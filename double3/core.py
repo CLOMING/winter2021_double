@@ -94,8 +94,11 @@ class DetectPersonThread(StoppableThread):
             if img is None or img.size == 0:
                 self._stop_event.wait(0.1)
                 continue
-            people_detector = PeopleDetector(AmazonImage.from_ndarray(img))
-            self.state.people = people_detector.run()
+            try:
+                people_detector = PeopleDetector(AmazonImage.from_ndarray(img))
+                self.state.people = people_detector.run()
+            except Exception as error:
+                print(error)
 
             self._stop_event.wait(0.1)
 
@@ -200,7 +203,7 @@ class UpdateMaskStatusThread(StoppableThread):
 
     def run(self):
         while not self.stopped():
-            if len(self.mask_status_queue) > 2:
+            if not self.mask_status_queue:
                 self._stop_event.wait(0.1)
                 continue
 
@@ -208,7 +211,10 @@ class UpdateMaskStatusThread(StoppableThread):
 
             mask_detector = MaskDetector(
                 AmazonImage.from_ndarray(face.img))
-            people = mask_detector.run()
+            try:
+                people = mask_detector.run()
+            except:
+                people = None
 
             if not people:
                 self._stop_event.wait(0.1)
@@ -228,7 +234,7 @@ class ManageNameQueueThread(StoppableThread):
 
     def run(self):
         while not self.stopped():
-            if self.name_queue:
+            if len(self.name_queue) > 2:
                 self._stop_event.wait(0.1)
                 continue
 
@@ -278,6 +284,9 @@ class UpdateNameThread(StoppableThread):
             else:
                 user_id = face_match.face.external_image_id
 
-            name = self.db.read(user_id).name
+            try:
+                name = self.db.read(user_id).name
+            except:
+                name = None
 
             self.state.set_face_info(face.id, user_id, name)

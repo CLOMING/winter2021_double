@@ -12,11 +12,13 @@ class Target:
 
     def __init__(self,
                  face: Face,
-                 message: str) -> None:
+                 message: str,
+                 check: Callable[[], bool]) -> None:
         self.index = Target.__index
         Target.__index += 1
         self.face = face
         self.message = message
+        self.check = check
 
 
 class Speaker:
@@ -32,22 +34,22 @@ class Speaker:
 
     def __set(self) -> None:
         self.enable_speaker()
-        self.detect_thread = DetectTargetThread(
+        self.target_pool_manager = DetectTargetThread(
             self.state, self.get_targets, self.update_targets)
-        self.read_thread = SpeakThread(
+        self.worker = SpeakThread(
             self.get_targets, self.remove_target, self.check_target_exist)
 
     def start(self) -> None:
         self.__set()
-        self.detect_thread.start()
-        self.read_thread.start()
+        self.target_pool_manager.start()
+        self.worker.start()
 
     def close(self) -> None:
-        self.detect_thread.terminate()
-        self.detect_thread.join()
+        self.target_pool_manager.terminate()
+        self.target_pool_manager.join()
 
-        self.read_thread.terminate()
-        self.read_thread.join()
+        self.worker.terminate()
+        self.worker.join()
 
         self.targets.clear()
 
@@ -97,7 +99,8 @@ class DetectTargetThread(StoppableThread):
             targets = [
                 Target(
                     face,
-                    f'{face.name or "손"}님, 마스크를 착용해 주시기 바랍니다. '
+                    f'{face.name or "손"}님, 마스크를 착용해 주시기 바랍니다. ',
+                    lambda: face.mask_status == MaskStatus.NOT_WEARED
                 )
                 for face in self.state.faces if face.mask_status == MaskStatus.NOT_WEARED
             ]
@@ -123,6 +126,6 @@ class SpeakThread(StoppableThread):
             for target in targets:
                 if self.check_target_exist(target):
                     self.remove_target(target)
-                    self.tts.read(target.message)
+                    if target.check():
+                        self.tts.read(target.message)
                     self._stop_event.wait(2)
-            self._stop_event.wait(10)

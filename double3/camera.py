@@ -76,12 +76,12 @@ class Camera:
         # except:
         #     self.use_default()
 
-        try:
-            self.use_usb_camera()
-        except:
+        self.use_usb_camera()
+
+        if not self.cam or not self.cam.isOpened():
             self.use_default()
 
-        if not self.cam.isOpened():
+        if not self.cam or not self.cam.isOpened():
             sys.exit('Fail to open camera')
 
     def close(self):
