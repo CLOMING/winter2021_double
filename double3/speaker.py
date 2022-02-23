@@ -10,10 +10,13 @@ from winter2021_recognition.amazon_polly import TTS
 class Target:
     __index = 0
 
-    def __init__(self, face: Face) -> None:
-        self.face = face
+    def __init__(self,
+                 face: Face,
+                 message: str) -> None:
         self.index = Target.__index
         Target.__index += 1
+        self.face = face
+        self.message = message
 
 
 class Speaker:
@@ -91,8 +94,13 @@ class DetectTargetThread(StoppableThread):
                 self._stop_event.wait(0.1)
                 continue
 
-            targets = [Target(
-                face) for face in self.state.faces if face.mask_status == MaskStatus.NOT_WEARED]
+            targets = [
+                Target(
+                    face,
+                    f'{face.name or "손"}님, 마스크를 착용해 주시기 바랍니다. '
+                )
+                for face in self.state.faces if face.mask_status == MaskStatus.NOT_WEARED
+            ]
             self.update_targets(targets)
 
             self._stop_event.wait(0.1)
@@ -115,7 +123,6 @@ class SpeakThread(StoppableThread):
             for target in targets:
                 if self.check_target_exist(target):
                     self.remove_target(target)
-                    self.tts.read(
-                        f'{target.face.name or "손"}님, 마스크를 착용해주시기 바랍니다.')
+                    self.tts.read(target.message)
                     self._stop_event.wait(2)
             self._stop_event.wait(10)
