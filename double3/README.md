@@ -1,6 +1,15 @@
 # Double3SDK
 See [double3sdk/README.md](double3sdk/README.md).
 
+# winter2021_recognition
+Git Submodule of [winter2021_recognition](https://github.com/junghyuncho/winter2021_recognition).  
+```bash
+git submodule init # just in the beginning
+
+git submodule update --remote # fetch and update submodule
+```
+See [winter2021_recognition/README.md](winter2021_recognition/README.md).
+
 # App
 OpenCV based app
 ## Installiation

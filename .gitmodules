@@ -1,3 +1,4 @@
 [submodule "double3/winter2021_recognition"]
 	path = double3/winter2021_recognition
-	url = git@github.com:junghyuncho/winter2021_recognition.git
+	url = git@github.com:anychhoice/winter2021_recognition.git
+	branch = main
