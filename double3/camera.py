@@ -14,6 +14,11 @@ class Camera:
         self.width = width
         self.height = height
 
+    def use_usb_camera(self):
+        self.cam = cv2.VideoCapture(6)
+        self.cam.set(3, self.width)
+        self.cam.set(4, self.height)
+
     def use_default(self):
         self.cam = cv2.VideoCapture(0)
         self.cam.set(3, self.width)
@@ -23,12 +28,18 @@ class Camera:
         self,
         dev: int = 0,
     ):
+        """
+        Need compiling OpenCV with Gstreamer - See `install-opencv.md`
+        """
         gst_str = ('v4l2src device=/dev/video{} ! '
                    'video/x-raw, width=(int){}, height=(int){} ! '
                    'videoconvert ! appsink').format(dev, self.width, self.height)
         self.cam = cv2.VideoCapture(gst_str, cv2.CAP_GSTREAMER)
 
     def use_jetson(self):
+        """
+        Need compiling OpenCV with Gstreamer - See `install-opencv.md`
+        """
         gst_elements = str(subprocess.check_output('gst-inspect-1.0'))
         if 'nvcamerasrc' in gst_elements:
             # On versions of L4T prior to 28.1, add 'flip-method=2' into gst_str
@@ -55,12 +66,19 @@ class Camera:
         self.cam = cv2.VideoCapture(gst_str, cv2.CAP_GSTREAMER)
 
     def set(self):
-        try:
-            self.use_jetson()
-        except RuntimeError:
-            self.use_linux_usb()
+        """
+        Due to onboard-camera error, we will use usb camera
+        """
+        # try:
+        #     self.use_jetson()
+        # except RuntimeError:
+        #     self.use_linux_usb()
+        # except:
+        #     self.use_default()
 
-        if not self.cam.isOpened():
+        try:
+            self.use_usb_camera()
+        except:
             self.use_default()
 
         if not self.cam.isOpened():
