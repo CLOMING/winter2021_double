@@ -22,21 +22,21 @@ class Core:
 
         self.crop_image_thread = CropImageThread(self.state, self.capture)
 
-        self.mask_status_queue: Deque[Face] = deque()
-        self.manage_mask_status_queue_thread = ManageMaskStatusQueueThread(
-            self.state, self.mask_status_queue)
-        self.detect_mask_threads: List[UpdateMaskStatusThread] = []
+        self.mask_status_pool: Deque[Face] = deque()
+        self.mask_status_pool_manager = ManageMaskStatusQueueThread(
+            self.state, self.mask_status_pool)
+        self.detect_mask_worker: List[UpdateMaskStatusThread] = []
         for _ in range(5):
-            self.detect_mask_threads.append(
-                UpdateMaskStatusThread(self.state, self.mask_status_queue))
+            self.detect_mask_worker.append(
+                UpdateMaskStatusThread(self.state, self.mask_status_pool))
 
-        self.name_queue: Deque[Face] = deque()
-        self.manage_name_queue_thread = ManageNameQueueThread(
-            self.state, self.name_queue)
-        self.search_face_threads: List[UpdateNameThread] = []
+        self.face_recognition_pool: Deque[Face] = deque()
+        self.face_recognition_pool_manager = ManageNameQueueThread(
+            self.state, self.face_recognition_pool)
+        self.face_recognition_worker: List[UpdateNameThread] = []
         for _ in range(5):
-            self.search_face_threads.append(
-                UpdateNameThread(self.state, self.name_queue))
+            self.face_recognition_worker.append(
+                UpdateNameThread(self.state, self.face_recognition_pool))
 
     def start(self) -> None:
         if self.state.is_core_running:
@@ -48,11 +48,11 @@ class Core:
         self.__set()
         self.detect_person_thread.start()
         self.crop_image_thread.start()
-        self.manage_mask_status_queue_thread.start()
-        for thread in self.detect_mask_threads:
+        self.mask_status_pool_manager.start()
+        for thread in self.detect_mask_worker:
             thread.start()
-        self.manage_name_queue_thread.start()
-        for thread in self.search_face_threads:
+        self.face_recognition_pool_manager.start()
+        for thread in self.face_recognition_worker:
             thread.start()
 
     def close(self) -> None:
@@ -65,17 +65,17 @@ class Core:
 
         self.crop_image_thread.terminate()
 
-        self.manage_mask_status_queue_thread.terminate()
+        self.mask_status_pool_manager.terminate()
 
-        for thread in self.detect_mask_threads:
+        for thread in self.detect_mask_worker:
             thread.terminate()
-        self.detect_mask_threads.clear()
+        self.detect_mask_worker.clear()
 
-        self.manage_name_queue_thread.terminate()
+        self.face_recognition_pool_manager.terminate()
 
-        for thread in self.search_face_threads:
+        for thread in self.face_recognition_worker:
             thread.terminate()
-        self.search_face_threads.clear()
+        self.face_recognition_worker.clear()
 
         self.state.clear()
 
@@ -200,7 +200,7 @@ class UpdateMaskStatusThread(StoppableThread):
 
     def run(self):
         while not self.stopped():
-            if not self.mask_status_queue:
+            if len(self.mask_status_queue) > 2:
                 self._stop_event.wait(0.1)
                 continue
 
