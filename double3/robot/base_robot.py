@@ -1,13 +1,33 @@
 from abc import ABCMeta, abstractmethod
+from mimetypes import init
 from typing import Callable, List
+from double3.camera import Camera
 
 from thread import StoppableThread
 from state import State
 
 
 class MovingStrategy:
-    # TODO: double3sdk
     pass
+
+# forward, clockwise = double3 sdk navigate.py drive (throttle, turn)
+class MovingStrategyNavigate(MovingStrategy):
+    def __init__(self, clockwise: float) -> None:
+        super().__init__()
+        self.forward = 1
+        self.clockwise = clockwise 
+
+
+class MovingStrategyBackward(MovingStrategy):
+    def __init__(self) -> None:
+        super().__init__()
+        self.forward = -1
+
+
+class MovingStrategyStop(MovingStrategy):
+    def __init__(self) -> None:
+        super().__init__()
+        self.forward = 0
 
 
 class BaseRobot(metaclass=ABCMeta):
@@ -77,7 +97,25 @@ class CheckRobotThread(StoppableThread):
 
     def run(self):
         while not self.stopped():
-            # TODO: 로봇을 어떻게 움직일지 여부 판단
+            faces = self.get_state.faces
+            people = self.get_state.people
+
+            if not faces and people: 
+                closest_person = people[0]
+                if not (len(people) == 1):
+                    for person in people:
+                        if person.bounding_box.bottom > closest_person.bounding_box.bottom:
+                            closest_person = person
+
+                closest_bounding_box = closest_person.bounding_box
+                if closest_bounding_box.width > 0.9 or closest_bounding_box.height > 0.9:
+                    MovingStrategyBackward()
+                else:
+                    clockwise = closest_bounding_box.left+closest_bounding_box.width/2-0.5
+                    MovingStrategyNavigate(clockwise)
+            else:
+                MovingStrategyStop()
+
             self._stop_event.wait(0.1)
 
 
