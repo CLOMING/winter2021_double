@@ -1,4 +1,4 @@
-from .base_robot import BaseRobot
+from .base_robot import BaseRobot, MovingStrategyDrive, MovingStrategyStop, MovingStrategyTarget
 from double3sdk import Double3SDK
 from state import State
 
@@ -9,17 +9,24 @@ class Robot(BaseRobot):
         self.sdk = Double3SDK()
 
     def enable_camara(self):
-        # TODO: double3sdk
-        pass
+        self.sdk.camera.enable()
 
     def enable_navigate(self):
-        # TODO: double3sdk
-        pass
+        self.sdk.navigate.enable()
 
     def disable_camera(self):
-        # TODO: double3sdk
-        pass
+        self.sdk.camera.disable()
 
     def disable_navigate(self):
-        # TODO: double3sdk
+        self.sdk.navigate.disable()
+
+    def navigate_drive(self, strategy: MovingStrategyDrive):
+        self.sdk.navigate.drive(
+            strategy.forward, strategy.clockwise, False, False)
+
+    def navigate_target(self, strategy: MovingStrategyTarget):
+        self.sdk.navigate.target(strategy.x, strategy.y, 0, True, False, 0, "")
+
+    def stop_move(self, strategy: MovingStrategyStop):
         pass
+        # self.sdk.navigate.cancel_target() # if navigate.target is called

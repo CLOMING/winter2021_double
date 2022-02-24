@@ -1,7 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from mimetypes import init
-from typing import Callable, List
-from double3.camera import Camera
+from typing import Callable, Final, List, Optional
 
 from thread import StoppableThread
 from state import State
@@ -10,37 +8,55 @@ from state import State
 class MovingStrategy:
     pass
 
-# forward, clockwise = double3 sdk navigate.py drive (throttle, turn)
-class MovingStrategyNavigate(MovingStrategy):
-    def __init__(self, clockwise: float) -> None:
-        super().__init__()
-        self.forward = 1
-        self.clockwise = clockwise 
-
-
-class MovingStrategyBackward(MovingStrategy):
-    def __init__(self) -> None:
-        super().__init__()
-        self.forward = -1
-
 
 class MovingStrategyStop(MovingStrategy):
     def __init__(self) -> None:
         super().__init__()
-        self.forward = 0
+
+
+class MovingStrategyTarget(MovingStrategy):
+    def __init__(self,
+                 x: int,
+                 y: int) -> None:
+        self.x = x
+        self.y = y
+
+
+class MovingStrategyDrive(MovingStrategy):
+    # forward, clockwise = double3 sdk navigate.py drive (throttle, turn)
+    def __init__(self,
+                 forward: float,
+                 clockwise: float) -> None:
+        self.forward = forward
+        self.clockwise = clockwise
+
+
+class MovingStrategyBackward(MovingStrategyDrive):
+    def __init__(self,
+                 clockwise: Optional[float]) -> None:
+        super().__init__(forward=-1, clockwise=clockwise or 0)
 
 
 class BaseRobot(metaclass=ABCMeta):
     def __init__(self, state: State) -> None:
         self.state = state
         self.moving_strategies: List[MovingStrategy] = []
+        self.__strategy_method_map: Final = {
+            MovingStrategyDrive: self.navigate_drive,
+            MovingStrategyTarget: self.navigate_target,
+            MovingStrategyStop: self.stop_move,
+        }
 
     def __set(self):
         self.enable_camara()
         self.enable_navigate()
-        self.check_thread = CheckRobotThread(
-            self.get_state, self.get_moving_strategies, self.update_moving_strategies)
-        self.move_thread = RunRobotThread(self.get_moving_strategies)
+        self.check_thread = CheckRobotThread(self.get_state,
+                                             self.get_moving_strategies,
+                                             self.update_moving_strategies)
+        self.move_thread = RunRobotThread(self.get_moving_strategies,
+                                          self.remove_strategy,
+                                          self.check_exist,
+                                          self.move)
 
     def start(self):
         self.__set()
@@ -63,10 +79,17 @@ class BaseRobot(metaclass=ABCMeta):
         return self.state
 
     def update_moving_strategies(self, moving_strategies: List[MovingStrategy]) -> None:
-        self.moving_strategies = moving_strategies
+        for strategy in moving_strategies:
+            self.moving_strategies.append(strategy)
 
     def get_moving_strategies(self) -> List[MovingStrategy]:
         return self.moving_strategies
+
+    def remove_strategy(self, strategy: MovingStrategy) -> None:
+        self.moving_strategies.remove(strategy)
+
+    def check_exist(self, strategy: MovingStrategy) -> bool:
+        return strategy in self.moving_strategies
 
     @abstractmethod
     def enable_navigate(self):
@@ -84,6 +107,22 @@ class BaseRobot(metaclass=ABCMeta):
     def disable_camera(self):
         pass
 
+    @abstractmethod
+    def navigate_drive(self, strategy: MovingStrategyDrive):
+        pass
+
+    @abstractmethod
+    def navigate_target(self, strategy: MovingStrategyTarget):
+        pass
+
+    @abstractmethod
+    def stop_move(self, strategy: MovingStrategyStop):
+        pass
+
+    def move(self, strategy: MovingStrategy):
+        method = self.__strategy_method_map[type(strategy)]
+        method(strategy)
+
 
 class CheckRobotThread(StoppableThread):
     def __init__(self,
@@ -97,10 +136,10 @@ class CheckRobotThread(StoppableThread):
 
     def run(self):
         while not self.stopped():
-            faces = self.get_state.faces
-            people = self.get_state.people
+            faces = [face for face in self.get_state().faces]
+            people = [person for person in self.get_state().people]
 
-            if not faces and people: 
+            if not faces and people:
                 closest_person = people[0]
                 if not (len(people) == 1):
                     for person in people:
@@ -109,25 +148,43 @@ class CheckRobotThread(StoppableThread):
 
                 closest_bounding_box = closest_person.bounding_box
                 if closest_bounding_box.width > 0.9 or closest_bounding_box.height > 0.9:
-                    MovingStrategyBackward()
+                    self.update_moving_strategies([MovingStrategyBackward()])
                 else:
                     clockwise = closest_bounding_box.left+closest_bounding_box.width/2-0.5
-                    MovingStrategyNavigate(clockwise)
+                    self.update_moving_strategies(
+                        [MovingStrategyDrive(1, clockwise)])
             else:
-                MovingStrategyStop()
+                self.update_moving_strategies([MovingStrategyStop()])
 
             self._stop_event.wait(0.1)
 
 
 class RunRobotThread(StoppableThread):
     def __init__(self,
-                 get_moving_strategies: Callable[[], List[MovingStrategy]]):
+                 get_moving_strategies: Callable[[], List[MovingStrategy]],
+                 remove_strategy: Callable[[MovingStrategy], None],
+                 check_exist: Callable[[MovingStrategy], bool],
+                 move: Callable[[MovingStrategy], None]):
         super().__init__()
         self.get_moving_strategies = get_moving_strategies
+        self.remove_strategy = remove_strategy
+        self.check_exist = check_exist
+        self.move = move
 
     def run(self):
         while not self.stopped():
-            # TODO: 로봇 움직이기
+            strategies = [
+                strategy for strategy in self.get_moving_strategies()]
+
+            if not strategies:
+                self._stop_event.wait(0.1)
+                continue
+
+            for strategy in strategies:
+                if self.check_exist(strategy):
+                    self.remove_strategy(strategy)
+                    self.move(strategy)
+
             self._stop_event.wait(0.1)
 
 
