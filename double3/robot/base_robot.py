@@ -33,7 +33,7 @@ class MovingStrategyDrive(MovingStrategy):
 
 class MovingStrategyBackward(MovingStrategyDrive):
     def __init__(self,
-                 clockwise: Optional[float]) -> None:
+                 clockwise: Optional[float] = None) -> None:
         super().__init__(forward=-1, clockwise=clockwise or 0)
 
 
@@ -41,11 +41,6 @@ class BaseRobot(metaclass=ABCMeta):
     def __init__(self, state: State) -> None:
         self.state = state
         self.moving_strategies: List[MovingStrategy] = []
-        self.__strategy_method_map: Final = {
-            MovingStrategyDrive: self.navigate_drive,
-            MovingStrategyTarget: self.navigate_target,
-            MovingStrategyStop: self.stop_move,
-        }
 
     def __set(self):
         self.enable_camara()
@@ -120,8 +115,12 @@ class BaseRobot(metaclass=ABCMeta):
         pass
 
     def move(self, strategy: MovingStrategy):
-        method = self.__strategy_method_map[type(strategy)]
-        method(strategy)
+        if isinstance(strategy, MovingStrategyDrive):
+            self.navigate_drive(strategy)
+        elif isinstance(strategy, MovingStrategyTarget):
+            self.navigate_target(strategy)
+        elif isinstance(strategy, MovingStrategyStop):
+            self.stop_move(strategy)
 
 
 class CheckRobotThread(StoppableThread):

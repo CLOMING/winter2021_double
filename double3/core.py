@@ -127,7 +127,7 @@ class CropImageThread(StoppableThread):
                 cropped_img_infos = None
 
             if not cropped_img_infos:
-                # TODO: 사진에 얼굴 검출 결과가 없을 때
+                self.state.faces.clear()
                 self._stop_event.wait(0.1)
                 continue
 
@@ -209,9 +209,9 @@ class UpdateMaskStatusThread(StoppableThread):
 
             face = self.mask_status_queue.popleft()
 
-            mask_detector = MaskDetector(
-                AmazonImage.from_ndarray(face.img))
             try:
+                mask_detector = MaskDetector(
+                    AmazonImage.from_ndarray(face.img))
                 people = mask_detector.run()
             except:
                 people = None
@@ -267,8 +267,8 @@ class UpdateNameThread(StoppableThread):
 
             face = self.name_queue.popleft()
 
-            image = AmazonImage.from_ndarray(face.img)
             try:
+                image = AmazonImage.from_ndarray(face.img)
                 face_match = self.face_manager.search_only_one_face(image)
             except:
                 face_match = None
