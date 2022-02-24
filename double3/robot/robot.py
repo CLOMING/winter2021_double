@@ -9,7 +9,8 @@ class Robot(BaseRobot):
         self.sdk = Double3SDK()
 
     def enable_camara(self):
-        self.sdk.camera.enable()
+        self.sdk.camera.disable()
+        # self.sdk.camera.enable()
 
     def enable_navigate(self):
         self.sdk.navigate.enable()
