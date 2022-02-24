@@ -23,8 +23,15 @@ class Robot(BaseRobot):
 
     def navigate_drive(self, strategy: MovingStrategyDrive):
         print(f'strategy: {strategy.forward}, {strategy.clockwise}')
+        clock_wise = strategy.clockwise
+
+        if clock_wise > 0.2:
+            clock_wise = 0.2
+        elif clock_wise < -0.2:
+            clock_wise = -0.2
+
         self.sdk.navigate.drive(
-            strategy.forward, strategy.clockwise, False, False)
+            strategy.forward, clock_wise, False, False)
 
     def navigate_target(self, strategy: MovingStrategyTarget):
         self.sdk.navigate.target(strategy.x, strategy.y, 0, True, False, 0, "")
