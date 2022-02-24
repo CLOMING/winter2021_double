@@ -163,7 +163,7 @@ class CheckRobotThread(StoppableThread):
                     self.update_moving_strategies(
                         [MovingStrategyDrive(0.2, clockwise)])
             elif not faces and not people:
-                self.update_moving_strategies([MovingStrategyDrive(0, 0.2)])
+                self.update_moving_strategies([MovingStrategyDrive(0, 0.6)])
             else:
                 self.update_moving_strategies([MovingStrategyStop()])
 

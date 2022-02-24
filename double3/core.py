@@ -1,4 +1,5 @@
 from collections import deque
+import time
 from typing import Callable, Deque, List, Tuple
 import numpy as np
 
@@ -17,10 +18,16 @@ class Core:
         self.capture = capture
 
     def __set(self) -> None:
-        self.detect_person_thread = DetectPersonThread(
-            self.state, self.capture)
+        self.detect_person_threads: List[DetectPersonThread] = []
+        for _ in range(5):
+            self.detect_person_threads.append(
+                DetectPersonThread(self.state, self.capture))
 
-        self.crop_image_thread = CropImageThread(self.state, self.capture)
+        self.crop_image_threads: List[CropImageThread] = []
+        for _ in range(5):
+            self.crop_image_threads.append(
+                CropImageThread(self.state, self.capture)
+            )
 
         self.mask_status_pool: Deque[Face] = deque()
         self.mask_status_pool_manager = ManageMaskStatusQueueThread(
@@ -46,8 +53,10 @@ class Core:
 
         self.state.is_core_running = True
         self.__set()
-        self.detect_person_thread.start()
-        self.crop_image_thread.start()
+        for i in range(5):
+            self.detect_person_threads[i].start()
+            self.crop_image_threads[i].start()
+            time.sleep(0.2)
         self.mask_status_pool_manager.start()
         for thread in self.detect_mask_worker:
             thread.start()
@@ -61,9 +70,10 @@ class Core:
 
         self.state.is_core_running = False
 
-        self.detect_person_thread.terminate()
-
-        self.crop_image_thread.terminate()
+        for thread in self.detect_person_threads:
+            thread.terminate()
+        for thread in self.crop_image_threads:
+            thread.terminate()
 
         self.mask_status_pool_manager.terminate()
 
