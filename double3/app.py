@@ -48,6 +48,7 @@ class App:
     def main(self):
         self.set()
         try:
+            self.switch()
             self.window.start()
         except Exception as e:
             print(f'Exception Raised: {e}')
