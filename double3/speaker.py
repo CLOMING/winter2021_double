@@ -59,13 +59,13 @@ class Speaker:
         if not self.sdk:
             return
 
-        #TODO: double3sdk
+        self.sdk.speaker.enable()
 
     def disable_speaker(self) -> None:
         if not self.sdk:
             return
 
-        #TODO: double3sdk
+        self.sdk.speaker.disable()
 
     def update_targets(self, targets: List[Target]) -> None:
         self.targets = targets
