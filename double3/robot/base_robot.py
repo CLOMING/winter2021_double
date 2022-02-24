@@ -28,14 +28,14 @@ class MovingStrategyDrive(MovingStrategy):
     def __init__(self,
                  forward: float,
                  clockwise: float) -> None:
-        self.forward = forward
-        self.clockwise = clockwise
+        self.forward = float(forward)
+        self.clockwise = float(clockwise)
 
 
 class MovingStrategyBackward(MovingStrategyDrive):
     def __init__(self,
                  clockwise: Optional[float] = None) -> None:
-        super().__init__(forward=-1, clockwise=clockwise or 0)
+        super().__init__(forward=-1.0, clockwise=clockwise or 0.0)
 
 
 class BaseRobot(metaclass=ABCMeta):
@@ -153,7 +153,7 @@ class CheckRobotThread(StoppableThread):
                 else:
                     clockwise = closest_bounding_box.left+closest_bounding_box.width/2-0.5
                     self.update_moving_strategies(
-                        [MovingStrategyDrive(1, clockwise)])
+                        [MovingStrategyDrive(1.0, clockwise)])
             else:
                 self.update_moving_strategies([MovingStrategyStop()])
 
