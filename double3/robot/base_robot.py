@@ -1,7 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from collections import deque
-import time
-from tkinter import W
 from typing import Callable, Deque, List, Optional
 
 from thread import StoppableThread
@@ -56,7 +54,6 @@ class BaseRobot(metaclass=ABCMeta):
                                           self.pop_strategy,
                                           self.check_exist,
                                           self.move)
-        time.sleep(2)
 
     def start(self):
         self.__set()
@@ -192,7 +189,7 @@ class RunRobotThread(StoppableThread):
 
             self.move(strategy)
 
-            self._stop_event.wait(0.1)
+            self._stop_event.wait(0.5)
 
 
 try:
