@@ -56,16 +56,16 @@ class Speaker:
         self.disable_speaker()
 
     def enable_speaker(self) -> None:
-        if not self.sdk:
-            return
-
-        self.sdk.speaker.enable()
+        try:
+            self.sdk.speaker.enable()
+        except:
+            pass
 
     def disable_speaker(self) -> None:
-        if not self.sdk:
-            return
-
-        self.sdk.speaker.disable()
+        try:
+            self.sdk.speaker.disable()
+        except:
+            pass
 
     def update_targets(self, targets: List[Target]) -> None:
         self.targets = targets
