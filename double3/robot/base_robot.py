@@ -81,6 +81,7 @@ class BaseRobot(metaclass=ABCMeta):
     def update_moving_strategies(self, moving_strategies: List[MovingStrategy]) -> None:
         for strategy in moving_strategies:
             self.moving_strategies.append(strategy)
+        print(self.moving_strategies)
 
         while len(self.moving_strategies) > 3:
             self.moving_strategies.popleft()
@@ -189,8 +190,7 @@ class RunRobotThread(StoppableThread):
 
             strategy = strategies.popleft()
 
-            for strategy in strategies:
-                self.move(strategy)
+            self.move(strategy)
 
             self._stop_event.wait(0.1)
 
