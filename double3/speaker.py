@@ -104,6 +104,16 @@ class DetectTargetThread(StoppableThread):
                 )
                 for face in self.state.faces if face.mask_status == MaskStatus.NOT_WEARED
             ]
+            targets2 = [
+                Target(
+                    face,
+                    f'{face.name or "손"}님, 마스크 착용이 확인되었습니다. ',
+                    lambda: face.mask_status == MaskStatus.WEARED
+                )
+                for face in self.state.faces if face.mask_status == MaskStatus.WEARED
+            ]
+            for target in targets2:
+                targets.append(target)
             self.update_targets(targets)
 
             self._stop_event.wait(0.1)
