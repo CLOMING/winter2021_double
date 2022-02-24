@@ -162,8 +162,6 @@ class CheckRobotThread(StoppableThread):
                     clockwise = closest_bounding_box.left+closest_bounding_box.width/2-0.5
                     self.update_moving_strategies(
                         [MovingStrategyDrive(0.2, clockwise)])
-            elif not faces and not people:
-                self.update_moving_strategies([MovingStrategyDrive(0, 0.2)])
             else:
                 self.update_moving_strategies([MovingStrategyStop()])
 
