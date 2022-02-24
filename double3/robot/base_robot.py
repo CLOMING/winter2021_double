@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+import time
 from typing import Callable, List, Optional
 
 from thread import StoppableThread
@@ -53,6 +54,7 @@ class BaseRobot(metaclass=ABCMeta):
                                           self.remove_strategy,
                                           self.check_exist,
                                           self.move)
+        time.sleep(2)
 
     def start(self):
         self.__set()
@@ -153,7 +155,7 @@ class CheckRobotThread(StoppableThread):
                 else:
                     clockwise = closest_bounding_box.left+closest_bounding_box.width/2-0.5
                     self.update_moving_strategies(
-                        [MovingStrategyDrive(1.0, clockwise)])
+                        [MovingStrategyDrive(0.5, clockwise)])
             else:
                 self.update_moving_strategies([MovingStrategyStop()])
 
