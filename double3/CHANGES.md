@@ -14,3 +14,7 @@
 - Add StoppableThread
 - Add Speaker
 - Add Robot
+
+## 0.2.1
+- Use USB Camera
+- Improve Robot
