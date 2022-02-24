@@ -38,7 +38,7 @@ class MovingStrategyDrive(MovingStrategy):
 class MovingStrategyBackward(MovingStrategyDrive):
     def __init__(self,
                  clockwise: Optional[float] = None) -> None:
-        super().__init__(forward=-0.5, clockwise=clockwise or 0.0)
+        super().__init__(forward=-0.2, clockwise=clockwise or 0.0)
 
 
 class BaseRobot(metaclass=ABCMeta):
@@ -53,7 +53,7 @@ class BaseRobot(metaclass=ABCMeta):
                                              self.get_moving_strategies,
                                              self.update_moving_strategies)
         self.move_thread = RunRobotThread(self.get_moving_strategies,
-                                          self.remove_strategy,
+                                          self.pop_strategy,
                                           self.check_exist,
                                           self.move)
         time.sleep(2)
@@ -89,8 +89,8 @@ class BaseRobot(metaclass=ABCMeta):
     def get_moving_strategies(self) -> Deque[MovingStrategy]:
         return self.moving_strategies
 
-    def remove_strategy(self, strategy: MovingStrategy) -> None:
-        self.moving_strategies.remove(strategy)
+    def pop_strategy(self) -> MovingStrategy:
+        return self.moving_strategies.popleft()
 
     def check_exist(self, strategy: MovingStrategy) -> bool:
         return strategy in self.moving_strategies
@@ -161,7 +161,7 @@ class CheckRobotThread(StoppableThread):
                 else:
                     clockwise = closest_bounding_box.left+closest_bounding_box.width/2-0.5
                     self.update_moving_strategies(
-                        [MovingStrategyDrive(0.5, clockwise)])
+                        [MovingStrategyDrive(0.2, clockwise)])
             else:
                 self.update_moving_strategies([MovingStrategyStop()])
 
@@ -171,12 +171,12 @@ class CheckRobotThread(StoppableThread):
 class RunRobotThread(StoppableThread):
     def __init__(self,
                  get_moving_strategies: Callable[[], Deque[MovingStrategy]],
-                 remove_strategy: Callable[[MovingStrategy], None],
+                 pop_left: Callable[[], MovingStrategy],
                  check_exist: Callable[[MovingStrategy], bool],
                  move: Callable[[MovingStrategy], None]):
         super().__init__()
         self.get_moving_strategies = get_moving_strategies
-        self.remove_strategy = remove_strategy
+        self.pop_left = pop_left
         self.check_exist = check_exist
         self.move = move
 
