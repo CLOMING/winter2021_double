@@ -1,9 +1,9 @@
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Final, List, Optional
-from double3.winter2021_recognition.amazon_rekognition.detect_protective_equipment import MaskStatus
+from typing import Callable, List, Optional
 
 from thread import StoppableThread
 from state import State
+from winter2021_recognition.amazon_rekognition.detect_protective_equipment import MaskStatus
 
 
 class MovingStrategy:
