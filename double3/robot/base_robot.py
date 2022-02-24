@@ -1,6 +1,8 @@
 from abc import ABCMeta, abstractmethod
+from collections import deque
 import time
-from typing import Callable, List, Optional
+from tkinter import W
+from typing import Callable, Deque, List, Optional
 
 from thread import StoppableThread
 from state import State
@@ -36,13 +38,13 @@ class MovingStrategyDrive(MovingStrategy):
 class MovingStrategyBackward(MovingStrategyDrive):
     def __init__(self,
                  clockwise: Optional[float] = None) -> None:
-        super().__init__(forward=-1.0, clockwise=clockwise or 0.0)
+        super().__init__(forward=-0.5, clockwise=clockwise or 0.0)
 
 
 class BaseRobot(metaclass=ABCMeta):
     def __init__(self, state: State) -> None:
         self.state = state
-        self.moving_strategies: List[MovingStrategy] = []
+        self.moving_strategies: Deque[MovingStrategy] = deque()
 
     def __set(self):
         self.enable_camara()
@@ -80,7 +82,10 @@ class BaseRobot(metaclass=ABCMeta):
         for strategy in moving_strategies:
             self.moving_strategies.append(strategy)
 
-    def get_moving_strategies(self) -> List[MovingStrategy]:
+        while len(self.moving_strategies) > 3:
+            self.moving_strategies.popleft()
+
+    def get_moving_strategies(self) -> Deque[MovingStrategy]:
         return self.moving_strategies
 
     def remove_strategy(self, strategy: MovingStrategy) -> None:
@@ -155,7 +160,7 @@ class CheckRobotThread(StoppableThread):
                 else:
                     clockwise = closest_bounding_box.left+closest_bounding_box.width/2-0.5
                     self.update_moving_strategies(
-                        [MovingStrategyDrive(0.2, clockwise)])
+                        [MovingStrategyDrive(0.5, clockwise)])
             else:
                 self.update_moving_strategies([MovingStrategyStop()])
 
@@ -164,7 +169,7 @@ class CheckRobotThread(StoppableThread):
 
 class RunRobotThread(StoppableThread):
     def __init__(self,
-                 get_moving_strategies: Callable[[], List[MovingStrategy]],
+                 get_moving_strategies: Callable[[], Deque[MovingStrategy]],
                  remove_strategy: Callable[[MovingStrategy], None],
                  check_exist: Callable[[MovingStrategy], bool],
                  move: Callable[[MovingStrategy], None]):
@@ -176,16 +181,16 @@ class RunRobotThread(StoppableThread):
 
     def run(self):
         while not self.stopped():
-            strategies = [
-                strategy for strategy in self.get_moving_strategies()]
+            strategies = self.get_moving_strategies()
 
             if not strategies:
                 self._stop_event.wait(0.1)
                 continue
 
+            strategy = strategies.popleft()
+
             for strategy in strategies:
                 if self.check_exist(strategy):
-                    self.remove_strategy(strategy)
                     self.move(strategy)
 
             self._stop_event.wait(0.1)
