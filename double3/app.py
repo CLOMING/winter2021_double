@@ -17,8 +17,8 @@ from window import Window
 
 class App:
     def __init__(self) -> None:
-        width: int = 1920
-        height: int = 1080
+        width: int = 1600
+        height: int = 1600
 
         self.state = State()
 
@@ -73,4 +73,8 @@ class App:
 
 
 if __name__ == "__main__":
-    App().main()
+    app = App()
+    try:
+        app.main()
+    except:
+        app.close()

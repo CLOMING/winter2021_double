@@ -94,8 +94,11 @@ class DetectPersonThread(StoppableThread):
             if img is None or img.size == 0:
                 self._stop_event.wait(0.1)
                 continue
-            people_detector = PeopleDetector(AmazonImage.from_ndarray(img))
-            self.state.people = people_detector.run()
+            try:
+                people_detector = PeopleDetector(AmazonImage.from_ndarray(img))
+                self.state.people = people_detector.run()
+            except Exception as error:
+                print(error)
 
             self._stop_event.wait(0.1)
 
@@ -124,7 +127,7 @@ class CropImageThread(StoppableThread):
                 cropped_img_infos = None
 
             if not cropped_img_infos:
-                # TODO: 사진에 얼굴 검출 결과가 없을 때
+                self.state.faces.clear()
                 self._stop_event.wait(0.1)
                 continue
 
@@ -200,15 +203,18 @@ class UpdateMaskStatusThread(StoppableThread):
 
     def run(self):
         while not self.stopped():
-            if len(self.mask_status_queue) > 2:
+            if not self.mask_status_queue:
                 self._stop_event.wait(0.1)
                 continue
 
             face = self.mask_status_queue.popleft()
 
-            mask_detector = MaskDetector(
-                AmazonImage.from_ndarray(face.img))
-            people = mask_detector.run()
+            try:
+                mask_detector = MaskDetector(
+                    AmazonImage.from_ndarray(face.img))
+                people = mask_detector.run()
+            except:
+                people = None
 
             if not people:
                 self._stop_event.wait(0.1)
@@ -228,7 +234,7 @@ class ManageNameQueueThread(StoppableThread):
 
     def run(self):
         while not self.stopped():
-            if self.name_queue:
+            if len(self.name_queue) > 2:
                 self._stop_event.wait(0.1)
                 continue
 
@@ -261,8 +267,8 @@ class UpdateNameThread(StoppableThread):
 
             face = self.name_queue.popleft()
 
-            image = AmazonImage.from_ndarray(face.img)
             try:
+                image = AmazonImage.from_ndarray(face.img)
                 face_match = self.face_manager.search_only_one_face(image)
             except:
                 face_match = None
@@ -278,6 +284,9 @@ class UpdateNameThread(StoppableThread):
             else:
                 user_id = face_match.face.external_image_id
 
-            name = self.db.read(user_id).name
+            try:
+                name = self.db.read(user_id).name
+            except:
+                name = None
 
             self.state.set_face_info(face.id, user_id, name)

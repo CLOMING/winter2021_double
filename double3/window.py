@@ -73,10 +73,10 @@ class Window:
     def __show_help_text(self, img: np.ndarray) -> np.ndarray:
         text = 'Tap screen to start rekognition'
         font = cv2.FONT_HERSHEY_SIMPLEX
-        text_size = cv2.getTextSize(text, font, 1, 2)[0]
+        text_size = cv2.getTextSize(text, font, 1, 6)[0]
         org = (int((img.shape[1] - text_size[0]) / 2),
                int((img.shape[0] + text_size[1]) / 2))
-        cv2.putText(img, text, org, font, 1, (255, 255, 255), 2,)
+        cv2.putText(img, text, org, font, 1, (255, 255, 255), 6,)
 
         return img
 
@@ -99,7 +99,7 @@ class Window:
             (face.box.left, face.box.top),
             (face.box.right, face.box.bottom),
             color,
-            thickness=2,
+            thickness=4,
         )
 
         mask_text_dict = {
@@ -122,7 +122,7 @@ class Window:
 
         pil_image = Image.fromarray(img)
         draw = ImageDraw.Draw(pil_image)
-        font = ImageFont.truetype("fonts/gulim.ttc", 20)
+        font = ImageFont.truetype("fonts/gulim.ttc", 22)
         draw.text(org, text, font=font, fill=color)
 
         return np.array(pil_image)
