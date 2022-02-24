@@ -155,11 +155,11 @@ class CheckRobotThread(StoppableThread):
                 else:
                     clockwise = closest_bounding_box.left+closest_bounding_box.width/2-0.5
                     self.update_moving_strategies(
-                        [MovingStrategyDrive(0.5, clockwise)])
+                        [MovingStrategyDrive(0.2, clockwise)])
             else:
                 self.update_moving_strategies([MovingStrategyStop()])
 
-            self._stop_event.wait(0.5)
+            self._stop_event.wait(1.0)
 
 
 class RunRobotThread(StoppableThread):
