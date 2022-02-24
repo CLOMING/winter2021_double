@@ -78,7 +78,6 @@ class BaseRobot(metaclass=ABCMeta):
     def update_moving_strategies(self, moving_strategies: List[MovingStrategy]) -> None:
         for strategy in moving_strategies:
             self.moving_strategies.append(strategy)
-        print(self.moving_strategies)
 
         while len(self.moving_strategies) > 3:
             self.moving_strategies.popleft()
