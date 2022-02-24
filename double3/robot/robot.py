@@ -21,6 +21,7 @@ class Robot(BaseRobot):
         self.sdk.navigate.disable()
 
     def navigate_drive(self, strategy: MovingStrategyDrive):
+        print(f'strategy: {strategy.forward}, {strategy.clockwise}')
         self.sdk.navigate.drive(
             strategy.forward, strategy.clockwise, False, False)
 
@@ -28,5 +29,6 @@ class Robot(BaseRobot):
         self.sdk.navigate.target(strategy.x, strategy.y, 0, True, False, 0, "")
 
     def stop_move(self, strategy: MovingStrategyStop):
+        print(f'stopped')
         pass
         # self.sdk.navigate.cancel_target() # if navigate.target is called
