@@ -134,7 +134,7 @@ class BaseRobot(metaclass=ABCMeta):
 class CheckRobotThread(StoppableThread):
     def __init__(self,
                  get_state: Callable[[], State],
-                 get_moving_strategies: Callable[[], List[MovingStrategy]],
+                 get_moving_strategies: Callable[[], Deque[MovingStrategy]],
                  update_moving_strategies: Callable[[List[MovingStrategy]], None]):
         super().__init__()
         self.get_state = get_state
@@ -164,7 +164,7 @@ class CheckRobotThread(StoppableThread):
             else:
                 self.update_moving_strategies([MovingStrategyStop()])
 
-            self._stop_event.wait(1.0)
+            self._stop_event.wait(0.1)
 
 
 class RunRobotThread(StoppableThread):
@@ -190,8 +190,7 @@ class RunRobotThread(StoppableThread):
             strategy = strategies.popleft()
 
             for strategy in strategies:
-                if self.check_exist(strategy):
-                    self.move(strategy)
+                self.move(strategy)
 
             self._stop_event.wait(0.1)
 
