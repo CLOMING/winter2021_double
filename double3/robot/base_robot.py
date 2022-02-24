@@ -159,7 +159,7 @@ class CheckRobotThread(StoppableThread):
             else:
                 self.update_moving_strategies([MovingStrategyStop()])
 
-            self._stop_event.wait(0.1)
+            self._stop_event.wait(0.5)
 
 
 class RunRobotThread(StoppableThread):
