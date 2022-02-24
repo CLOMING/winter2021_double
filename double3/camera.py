@@ -15,7 +15,7 @@ class Camera:
         self.height = height
 
     def use_usb_camera(self):
-        self.cam = cv2.VideoCapture(6)
+        self.cam = cv2.VideoCapture(2)
         self.cam.set(3, self.width)
         self.cam.set(4, self.height)
 

@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import Callable, Final, List, Optional
+from double3.winter2021_recognition.amazon_rekognition.detect_protective_equipment import MaskStatus
 
 from thread import StoppableThread
 from state import State
@@ -135,7 +136,8 @@ class CheckRobotThread(StoppableThread):
 
     def run(self):
         while not self.stopped():
-            faces = [face for face in self.get_state().faces]
+            faces = [face for face in self.get_state(
+            ).faces if face.mask_status == MaskStatus.WEARED]
             people = [person for person in self.get_state().people]
 
             if not faces and people:
@@ -189,7 +191,7 @@ class RunRobotThread(StoppableThread):
 
 try:
     from robot.robot import Robot as __Robot
-    __Robot()
+    __Robot(State())
 except:
     from robot.mock_robot import MockRobot as __Robot
 
