@@ -1,4 +1,4 @@
-[submodule "double3/winter2021_rekognition"]
-	path = double3/winter2021_rekognition
-	url = git@github.com:CLOMING/winter2021_recognition.git
+[submodule "double3/winter2021_recognition"]
+	path = double3/winter2021_recognition
+	url = git@github.com:anychhoice/winter2021_recognition.git
 	branch = main
